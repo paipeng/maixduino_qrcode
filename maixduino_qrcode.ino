@@ -30,8 +30,6 @@ void update_lcd_buffer(uint8_t* data, int width, int height, int depth) {
   Serial.print("\n");
   ox = (width - qrcode.size) / 2;
   oy = (height - qrcode.size) / 2;
-  ox = 0;
-  oy = 0;
   for (y = 0; y < height; y++) {
     for (x = 0; x < width * depth; x += depth) {
       uint8_t pixel_r = 255;//random(255);
@@ -39,12 +37,6 @@ void update_lcd_buffer(uint8_t* data, int width, int height, int depth) {
       uint8_t pixel_b = 255;//random(255);
       if ( x / 2 >= ox && x / 2 < (ox + qrcode.size) && y >= oy && y < (oy + qrcode.size) ) {
         p = x / 2 - ox + (y - oy) * qrcode.size;
-        //Serial.print(qrcode_getModule(&qrcode, x / 2 - ox, y - oy) ? "\u2588\u2588" : "  ");
-        Serial.print("get pixel of qrcode: ");
-        Serial.print(x / 2 - ox);
-        Serial.print("-");
-        Serial.print(y - oy);
-        Serial.print("\n");
         if (qrcode_getModule(&qrcode, x / 2 - ox, y - oy) == true) {
           pixel_r = 0;
           pixel_g = 0;
@@ -55,8 +47,8 @@ void update_lcd_buffer(uint8_t* data, int width, int height, int depth) {
           pixel_b = 255;
         }
       } else {
-        pixel_r = 0;
-        pixel_g = 0;
+        pixel_r = 255;
+        pixel_g = 255;
         pixel_b = 255;
       }
       unsigned int pixel = (pixel_r & 0xFF << 16 ) | (pixel_g & 0xFF << 8 ) | pixel_b & 0xFF;
@@ -134,12 +126,12 @@ void loop() {
   // put your main code here, to run repeatedly:
   digitalWrite(LED_BUILTIN, HIGH);
 
-  snprintf(qrcode_content, sizeof(char) * 64, "Hello Maixduino %d", sn);
+  snprintf(qrcode_content, sizeof(char) * 64, "Hi Maixduino %d, Pai Peng", sn);
   sn++;
   gen_qrcode(qrcode_content, QRCODE_VERSION, 0);
   show_qrcode_on_lcd();
 
-  lcd.setCursor(40, 30);
+  lcd.setCursor(20, 30);
   lcd.println(qrcode_content);
 
 
