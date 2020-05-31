@@ -6,7 +6,7 @@
 
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
-#define GPIO_OUTPUT 4
+#define QRCODE_VERSION 3
 
 SPIClass spi_(SPI0); // MUST be SPI0 for Maix series on board LCD
 Sipeed_ST7789 lcd(320, 240, spi_);
@@ -15,29 +15,37 @@ uint8_t* data;
 int depth = 2;
 static int sn = 0;
 char qrcode_content[64];
+uint8_t* qrcodeData;
 
 // update lcd pixel buffer data
 void update_lcd_buffer(uint8_t* data, int width, int height, int depth) {
-  int i, j;
+  int x, y;
   int k = 0;
   int ox, oy;
   int p;
 
-  uint8_t pixel_r = 255;//random(255);
-  uint8_t pixel_g = 255;//random(255);
-  uint8_t pixel_b = 255;//random(255);
   // set qrcode to center of screen
   Serial.print("QR szie: ");
   Serial.print(qrcode.size);
   Serial.print("\n");
   ox = (width - qrcode.size) / 2;
   oy = (height - qrcode.size) / 2;
-  for (i = 0; i < height; i++) {
-    for (j = 0; j < width * depth; j += depth) {
-      if ( j / 2 >= ox && j / 2 < (ox + qrcode.size) && i >= oy && i < (oy + qrcode.size) ) {
-        p = j / 2 - ox + (i - oy) * qrcode.size;
-
-        if (qrcode_getModule(&qrcode, j / 2 - ox, i - oy) == true) {
+  ox = 0;
+  oy = 0;
+  for (y = 0; y < height; y++) {
+    for (x = 0; x < width * depth; x += depth) {
+      uint8_t pixel_r = 255;//random(255);
+      uint8_t pixel_g = 255;//random(255);
+      uint8_t pixel_b = 255;//random(255);
+      if ( x / 2 >= ox && x / 2 < (ox + qrcode.size) && y >= oy && y < (oy + qrcode.size) ) {
+        p = x / 2 - ox + (y - oy) * qrcode.size;
+        //Serial.print(qrcode_getModule(&qrcode, x / 2 - ox, y - oy) ? "\u2588\u2588" : "  ");
+        Serial.print("get pixel of qrcode: ");
+        Serial.print(x / 2 - ox);
+        Serial.print("-");
+        Serial.print(y - oy);
+        Serial.print("\n");
+        if (qrcode_getModule(&qrcode, x / 2 - ox, y - oy) == true) {
           pixel_r = 0;
           pixel_g = 0;
           pixel_b = 0;
@@ -47,27 +55,27 @@ void update_lcd_buffer(uint8_t* data, int width, int height, int depth) {
           pixel_b = 255;
         }
       } else {
-        pixel_r = 255;
-        pixel_g = 255;
+        pixel_r = 0;
+        pixel_g = 0;
         pixel_b = 255;
       }
       unsigned int pixel = (pixel_r & 0xFF << 16 ) | (pixel_g & 0xFF << 8 ) | pixel_b & 0xFF;
       unsigned short rgb565 = RGB2COLOR(pixel_r, pixel_g, pixel_b);
-      *(data + i * width * depth + j) = (rgb565 & 0xFF00) >> 8;
-      *(data + i * width * depth + j + 1) = rgb565 & 0xFF ;
+      *(data + y * width * depth + x) = (rgb565 & 0xFF00) >> 8;
+      *(data + y * width * depth + x + 1) = rgb565 & 0xFF ;
     }
   }
 }
 
 void show_qrcode_on_lcd() {
-  memset(data, 0, sizeof(uint8_t)*SCREEN_WIDTH*SCREEN_HEIGHT);
+  memset(data, 0, sizeof(uint8_t)*SCREEN_WIDTH * SCREEN_HEIGHT);
   update_lcd_buffer(data, SCREEN_WIDTH, SCREEN_HEIGHT, depth);
   lcd.drawImage(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, (uint16_t*)data);
 }
 
 // Create the QR code
 void gen_qrcode(char* data, uint8_t qrcode_version, uint8_t ecc) {
-  uint8_t qrcodeData[qrcode_getBufferSize(qrcode_version)];
+  memset(qrcodeData, 0, sizeof(uint8_t)*qrcode_getBufferSize(qrcode_version));
   Serial.print("qrcodeData len: ");
   Serial.print(qrcode_getBufferSize(qrcode_version));
   Serial.print("\n");
@@ -119,21 +127,22 @@ void setup() {
 
   // LCD Pixel Buffer
   data = (uint8_t*) malloc(SCREEN_WIDTH * SCREEN_HEIGHT * depth * sizeof(uint8_t));
+  qrcodeData = (uint8_t*) malloc(sizeof(uint8_t) * qrcode_getBufferSize(QRCODE_VERSION));
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   digitalWrite(LED_BUILTIN, HIGH);
 
-  snprintf(qrcode_content, sizeof(char)*64, "Hello Maixduino %d", sn);
+  snprintf(qrcode_content, sizeof(char) * 64, "Hello Maixduino %d", sn);
   sn++;
-  gen_qrcode(qrcode_content, 3, 0);
+  gen_qrcode(qrcode_content, QRCODE_VERSION, 0);
   show_qrcode_on_lcd();
 
-  lcd.setCursor(100, 30);
+  lcd.setCursor(40, 30);
   lcd.println(qrcode_content);
 
-  
+
   delay(3000);
   digitalWrite(LED_BUILTIN, LOW);
   delay(500);
