@@ -60,8 +60,8 @@ void update_lcd_buffer(uint8_t* data, int width, int height, int depth) {
 }
 
 void show_qrcode_on_lcd() {
-  memset(data, 0, sizeof(uint8_t)*SCREEN_WIDTH * SCREEN_HEIGHT);
-  update_lcd_buffer(data, SCREEN_WIDTH, SCREEN_HEIGHT, depth);
+  memset(data, 255, sizeof(uint8_t)*SCREEN_WIDTH * SCREEN_HEIGHT);
+  update_lcd_buffer_2x(data, SCREEN_WIDTH, SCREEN_HEIGHT, depth);
   lcd.drawImage(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, (uint16_t*)data);
 }
 
