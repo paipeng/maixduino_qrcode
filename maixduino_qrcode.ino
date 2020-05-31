@@ -17,6 +17,59 @@ static int sn = 0;
 char qrcode_content[64];
 uint8_t* qrcodeData;
 
+
+// update lcd pixel buffer data
+void update_lcd_buffer_2x(uint8_t* data, int width, int height, int depth) {
+  int x, y;
+  int k = 0;
+  int ox, oy;
+
+  // set qrcode to center of screen
+  Serial.print("QR szie: ");
+  Serial.print(qrcode.size);
+  Serial.print("\n");
+  ox = (width - qrcode.size*2) / 2;
+  oy = (height - qrcode.size*2) / 2;
+  for (y = 0; y < height; y+=2) {
+    for (x = 0; x < width * depth; x += depth*2) {
+      uint8_t pixel_r = 255;//random(255);
+      uint8_t pixel_g = 255;//random(255);
+      uint8_t pixel_b = 255;//random(255);
+      if ( x / 2 >= ox && x / 2 < (ox + qrcode.size*2) && y >= oy && y < (oy + qrcode.size*2) ) {
+        if (qrcode_getModule(&qrcode, (x / 2 - ox)/2, (y - oy)/2) == true) {
+          pixel_r = 0;
+          pixel_g = 0;
+          pixel_b = 0;
+        } else {
+          pixel_r = 255;
+          pixel_g = 255;
+          pixel_b = 255;
+        }
+      } else {
+        pixel_r = 255;
+        pixel_g = 255;
+        pixel_b = 255;
+      }
+      unsigned int pixel = (pixel_r & 0xFF << 16 ) | (pixel_g & 0xFF << 8 ) | pixel_b & 0xFF;
+      unsigned short rgb565 = RGB2COLOR(pixel_r, pixel_g, pixel_b);
+      *(data + y * width * depth + x) = (rgb565 & 0xFF00) >> 8;
+      *(data + y * width * depth + x + 1) = rgb565 & 0xFF ;
+
+      
+      // x+1
+      *(data + y * width * depth + x + 2) = (rgb565 & 0xFF00) >> 8;
+      *(data + y * width * depth + x + 2 + 1) = rgb565 & 0xFF ;
+      // y+1
+      *(data + (y+1) * width * depth + x) = (rgb565 & 0xFF00) >> 8;
+      *(data + (y+1) * width * depth + x + 1) = rgb565 & 0xFF ;
+      // x+1; y+1
+      *(data + (y+1)  * width * depth + x + 2) = (rgb565 & 0xFF00) >> 8;
+      *(data + (y+1)  * width * depth + x + 2 + 1) = rgb565 & 0xFF ;
+
+    }
+  }
+}
+
 // update lcd pixel buffer data
 void update_lcd_buffer(uint8_t* data, int width, int height, int depth) {
   int x, y;
