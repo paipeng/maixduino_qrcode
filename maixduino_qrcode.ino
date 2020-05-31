@@ -114,7 +114,7 @@ void loop() {
 
   snprintf(qrcode_content, sizeof(char) * 64, "Charlotte  %d", sn);
   sn++;
-  gen_qrcode(qrcode_content, QRCODE_VERSION, 0);
+  gen_qrcode(qrcode_content, QRCODE_VERSION, ECC_HIGH);
   show_qrcode_on_lcd();
 
   lcd.setCursor(20, 30);
